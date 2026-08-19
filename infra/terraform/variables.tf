@@ -9,11 +9,6 @@ variable "aws_region" {
   description = "AWS region"
 }
 
-variable "is_production_account" {
-  type        = bool
-  default     = false
-  description = "Whether this is a production AWS account"
-}
 
 variable "image_tag" {
   type        = string

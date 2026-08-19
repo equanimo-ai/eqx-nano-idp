@@ -1,4 +1,4 @@
-name: CI/CD & Deploy
+name: CI/CD & Deploy (Dev)
 
 on:
   push:
@@ -6,16 +6,6 @@ on:
   pull_request:
     branches: [internal-main, develop]
   workflow_dispatch:
-    inputs:
-      environment:
-        description: "Target environment to deploy"
-        required: true
-        default: "dev"
-        type: choice
-        options:
-          - dev
-          - stage
-          - prod
 
 permissions:
   id-token: write
@@ -24,6 +14,7 @@ permissions:
 env:
   AWS_REGION: us-east-1
   SERVICE_NAME: eqx-nano-idp
+  ENVIRONMENT: dev
 
 jobs:
   test:
@@ -42,23 +33,12 @@ jobs:
         run: pytest
 
   deploy:
-    name: Build, Push & Deploy to ECS
+    name: Build, Push & Deploy to Dev ECS
     needs: test
     if: github.event_name == 'push' && (github.ref == 'refs/heads/internal-main' || github.ref == 'refs/heads/develop') || github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-
-      - name: Determine Environment
-        id: env
-        run: |
-          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
-            echo "target_env=${{ github.event.inputs.environment }}" >> $GITHUB_OUTPUT
-          elif [ "${{ github.ref }}" = "refs/heads/internal-main" ]; then
-            echo "target_env=dev" >> $GITHUB_OUTPUT
-          else
-            echo "target_env=dev" >> $GITHUB_OUTPUT
-          fi
 
       - name: Configure AWS Credentials (OIDC)
         uses: aws-actions/configure-aws-credentials@v4
@@ -87,8 +67,7 @@ jobs:
 
       - name: Deploy to ECS Service
         run: |
-          TARGET_ENV="${{ steps.env.outputs.target_env }}"
-          CLUSTER_NAME="apc-shared-services-${TARGET_ENV}"
+          CLUSTER_NAME="apc-shared-services-${{ env.ENVIRONMENT }}"
           aws ecs update-service \
             --cluster "${CLUSTER_NAME}" \
             --service "${{ env.SERVICE_NAME }}" \

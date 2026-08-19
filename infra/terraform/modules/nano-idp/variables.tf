@@ -27,10 +27,6 @@ variable "desired_count" {
   default = 1
 }
 
-variable "is_production_account" {
-  type    = bool
-  default = false
-}
 
 variable "domain_prefix" {
   type    = string

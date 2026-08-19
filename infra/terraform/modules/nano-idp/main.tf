@@ -1,7 +1,7 @@
 # ── S3 Configuration Bucket ──────────────────────────────────────────────────
 resource "aws_s3_bucket" "config" {
   bucket        = local.config_bucket_name
-  force_destroy = !var.is_production_account
+  force_destroy = true
   tags          = merge(var.common_tags, { Name = local.config_bucket_name })
 }
 
@@ -82,7 +82,7 @@ resource "aws_s3_object" "seed_users" {
 # ── ECR Repository ───────────────────────────────────────────────────────────
 resource "aws_ecr_repository" "this" {
   name                 = var.name_prefix
-  image_tag_mutability = var.is_production_account ? "IMMUTABLE" : "MUTABLE"
+  image_tag_mutability = "MUTABLE"
   image_scanning_configuration {
     scan_on_push = true
   }
@@ -183,7 +183,7 @@ resource "aws_security_group" "this" {
     from_port       = local.container_port
     to_port         = local.container_port
     protocol        = "tcp"
-    security_groups = length(data.aws_ssm_parameter.alb_security_group_id) > 0 ? [data.aws_ssm_parameter.alb_security_group_id[0].value] : []
+    security_groups = [data.aws_ssm_parameter.alb_security_group_id.value]
   }
 
   egress {
@@ -197,7 +197,6 @@ resource "aws_security_group" "this" {
 
 # ── Target Group & ALB Routing ────────────────────────────────────────────────
 resource "aws_lb_target_group" "this" {
-  count                = length(data.aws_ssm_parameter.alb_https_listener_arn) > 0 ? 1 : 0
   name                 = "${var.name_prefix}-tg"
   port                 = local.container_port
   protocol             = "HTTP"
@@ -221,13 +220,12 @@ resource "aws_lb_target_group" "this" {
 }
 
 resource "aws_lb_listener_rule" "this" {
-  count        = length(data.aws_ssm_parameter.alb_https_listener_arn) > 0 ? 1 : 0
-  listener_arn = data.aws_ssm_parameter.alb_https_listener_arn[0].value
+  listener_arn = data.aws_ssm_parameter.alb_https_listener_arn.value
   priority     = 110
 
   action {
     type             = "forward"
-    target_group_arn = aws_lb_target_group.this[0].arn
+    target_group_arn = aws_lb_target_group.this.arn
   }
 
   condition {
@@ -241,12 +239,11 @@ resource "aws_lb_listener_rule" "this" {
 
 # Route53 DNS record pointing to shared ALB
 resource "aws_route53_record" "this" {
-  count   = length(data.aws_ssm_parameter.hosted_zone_id) > 0 ? 1 : 0
-  zone_id = data.aws_ssm_parameter.hosted_zone_id[0].value
+  zone_id = data.aws_ssm_parameter.hosted_zone_id.value
   name    = local.fqdn
   type    = "CNAME"
   ttl     = 300
-  records = [data.aws_ssm_parameter.alb_dns_name[0].value]
+  records = [data.aws_ssm_parameter.alb_dns_name.value]
 }
 
 # ── Service Discovery ─────────────────────────────────────────────────────────
@@ -341,13 +338,10 @@ resource "aws_ecs_service" "this" {
     assign_public_ip = false
   }
 
-  dynamic "load_balancer" {
-    for_each = length(aws_lb_target_group.this) > 0 ? [aws_lb_target_group.this[0].arn] : []
-    content {
-      target_group_arn = load_balancer.value
-      container_name   = var.name_prefix
-      container_port   = local.container_port
-    }
+  load_balancer {
+    target_group_arn = aws_lb_target_group.this.arn
+    container_name   = var.name_prefix
+    container_port   = local.container_port
   }
 
   service_registries {
