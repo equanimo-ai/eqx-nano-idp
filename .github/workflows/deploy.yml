@@ -2,9 +2,9 @@ name: CI/CD & Deploy
 
 on:
   push:
-    branches: [main, develop]
+    branches: [internal-main, develop]
   pull_request:
-    branches: [main, develop]
+    branches: [internal-main, develop]
   workflow_dispatch:
     inputs:
       environment:
@@ -44,7 +44,7 @@ jobs:
   deploy:
     name: Build, Push & Deploy to ECS
     needs: test
-    if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop') || github.event_name == 'workflow_dispatch'
+    if: github.event_name == 'push' && (github.ref == 'refs/heads/internal-main' || github.ref == 'refs/heads/develop') || github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -54,8 +54,8 @@ jobs:
         run: |
           if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
             echo "target_env=${{ github.event.inputs.environment }}" >> $GITHUB_OUTPUT
-          elif [ "${{ github.ref }}" = "refs/heads/main" ]; then
-            echo "target_env=prod" >> $GITHUB_OUTPUT
+          elif [ "${{ github.ref }}" = "refs/heads/internal-main" ]; then
+            echo "target_env=dev" >> $GITHUB_OUTPUT
           else
             echo "target_env=dev" >> $GITHUB_OUTPUT
           fi
