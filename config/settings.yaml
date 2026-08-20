@@ -15,10 +15,14 @@ oauth:
     description: Test client for integration tests
   - client_id: multi-aud-client
     client_secret: multi-aud-secret
-    description: no auds
+    description: Client with multiple audiences (legacy and URI form)
+    additional_audiences:
+    - legacy-api
+    - https://api.example.com
+    - urn:service:billing
   - client_id: registered-client
     client_secret: registered-secret
-    description: Client with registered redirect URIs (exact matching, issue
+    description: Client with registered redirect URIs (exact matching, issue #67)
     redirect_uris:
     - http://localhost:3000/callback
   issuer_from_request: false
