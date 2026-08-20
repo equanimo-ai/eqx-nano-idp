@@ -154,6 +154,7 @@ class ClerkAuthService:
             signing_key.key,
             algorithms=["RS256"],
             options={"verify_exp": True, "verify_nbf": True},
+            leeway=60,
         )
 
         # If email is missing from JWT claims, lookup user from Clerk API using secret key
