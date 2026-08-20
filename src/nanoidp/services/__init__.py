@@ -10,6 +10,7 @@ from .device_code import (
     DeviceVerifyOutcome,
     get_device_code_store,
 )
+from .clerk_auth import ClerkAuthService, init_clerk_auth
 from .discovery import build_discovery_document
 from .revocation import RevocationStore, get_revocation_store
 from .token import TokenService, get_token_service
@@ -17,6 +18,8 @@ from .yaml_writer import YamlWriter, get_yaml_writer
 
 __all__ = [
     "build_discovery_document",
+    "ClerkAuthService",
+    "init_clerk_auth",
     "CryptoService",
     "get_crypto_service",
     "init_crypto_service",
@@ -37,3 +40,4 @@ __all__ = [
     "RevocationStore",
     "get_revocation_store",
 ]
+

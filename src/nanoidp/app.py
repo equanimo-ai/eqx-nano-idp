@@ -15,7 +15,7 @@ from werkzeug.middleware.proxy_fix import ProxyFix
 from . import __version__
 from .config import get_config, init_config
 from .routes import api_bp, oauth_bp, saml_bp, ui_bp
-from .services import init_crypto_service
+from .services import init_clerk_auth, init_crypto_service
 
 # Global limiter instance (initialized in create_app)
 limiter: Optional[Limiter] = None
@@ -113,6 +113,9 @@ def create_app(config_dir: Optional[str] = None, profile: Optional[str] = None) 
     app.register_blueprint(saml_bp)
     app.register_blueprint(ui_bp)
     app.register_blueprint(api_bp)
+
+    # Initialize Clerk authentication for Web UI / Admin access control
+    init_clerk_auth(app, settings)
 
     # Context processor to inject version into all templates
     @app.context_processor

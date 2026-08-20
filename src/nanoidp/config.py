@@ -117,6 +117,7 @@ class ConfigManager:
         jwt_config = data.get("jwt", {})
         session = data.get("session", {})
         logging_config = data.get("logging", {})
+        clerk = data.get("clerk", {})
 
         # Parse OAuth clients
         clients = []
@@ -181,6 +182,15 @@ class ConfigManager:
             log_token_requests=logging_config.get("log_token_requests", True),
             log_saml_requests=logging_config.get("log_saml_requests", True),
             verbose_logging=logging_config.get("verbose_logging", True),
+            # Clerk Authentication
+            clerk_enabled=clerk.get("enabled", False),
+            clerk_publishable_key=clerk.get("publishable_key", ""),
+            clerk_secret_key=clerk.get("secret_key", ""),
+            clerk_frontend_api=clerk.get("frontend_api", ""),
+            clerk_sign_in_url=clerk.get("sign_in_url", ""),
+            clerk_jwks_url=clerk.get("jwks_url", ""),
+            clerk_allowed_domains=clerk.get("allowed_domains", []) or [],
+            clerk_allowed_emails=clerk.get("allowed_emails", []) or [],
         )
 
     def _set_default_settings(self) -> None:

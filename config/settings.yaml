@@ -57,3 +57,13 @@ logging:
   format: '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
   log_token_requests: true
   log_saml_requests: true
+clerk:
+  enabled: ${CLERK_ENABLED:false}
+  publishable_key: ${CLERK_PUBLISHABLE_KEY:}
+  secret_key: ${CLERK_SECRET_KEY:}
+  frontend_api: ${CLERK_FRONTEND_API:}
+  sign_in_url: ${CLERK_SIGN_IN_URL:}
+  jwks_url: ${CLERK_JWKS_URL:}
+  allowed_domains: []
+  allowed_emails: []
+

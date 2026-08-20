@@ -265,6 +265,17 @@ class Settings(BaseModel):
     external_key_id: Optional[str] = Field(default=None, description="Key ID for external keys")
     max_previous_keys: int = Field(default=2, ge=0, le=10, description="Max previous keys to keep in JWKS")
 
+    # Clerk Authentication for Web UI
+    clerk_enabled: bool = Field(default=False, description="Enable Clerk authentication for Web UI")
+    clerk_publishable_key: str = Field(default="", description="Clerk publishable key (pk_...)")
+    clerk_secret_key: str = Field(default="", description="Clerk secret key (sk_...)")
+    clerk_frontend_api: str = Field(default="", description="Clerk frontend API / accounts domain")
+    clerk_sign_in_url: str = Field(default="", description="Clerk sign in URL")
+    clerk_jwks_url: str = Field(default="", description="Clerk JWKS URL")
+    clerk_allowed_domains: List[str] = Field(default_factory=list, description="Allowed email domains")
+    clerk_allowed_emails: List[str] = Field(default_factory=list, description="Allowed email addresses")
+
+
     @field_validator("saml_roles_attr_name", "saml_groups_attr_name", mode="before")
     @classmethod
     def _validate_saml_attr_name(cls, v: Any, info: ValidationInfo) -> str:
