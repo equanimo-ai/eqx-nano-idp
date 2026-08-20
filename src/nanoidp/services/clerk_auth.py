@@ -178,6 +178,15 @@ class ClerkAuthService:
 
         return claims
 
+    def _get_external_url(self) -> str:
+        """Get canonical external HTTPS request URL behind reverse proxy."""
+        proto = request.headers.get("X-Forwarded-Proto") or ("https" if request.is_secure else request.scheme)
+        if "equanimo.io" in request.host or request.headers.get("X-Forwarded-Proto") == "https":
+            proto = "https"
+        host = request.headers.get("X-Forwarded-Host") or request.host
+        path = request.full_path.rstrip("?") if request.query_string else request.path
+        return f"{proto}://{host}{path}"
+
     def handle_unauthenticated(self) -> Response:
         """Handle unauthenticated browser or API request."""
         # API / JSON request -> return 401 JSON
@@ -191,11 +200,78 @@ class ClerkAuthService:
                 "message": "Clerk authentication required for administrative access",
             }), 401
 
+        # Handle Clerk Account Portal return handshake
+        if any(k in request.args for k in ("__clerk_handshake", "__clerk_ticket", "__clerk_status", "__clerk_created_session")):
+            handshake_html = """
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Completing Sign In - NanoIDP</title>
+    <script
+        async
+        crossorigin="anonymous"
+        data-clerk-publishable-key="{{ publishable_key }}"
+        src="https://cdn.jsdelivr.net/npm/@clerk/clerk-js@5/dist/clerk.browser.js"
+        type="text/javascript">
+    </script>
+    <style>
+        body {
+            background-color: #0f172a;
+            color: #f8fafc;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            margin: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            text-align: center;
+        }
+        .spinner {
+            width: 48px;
+            height: 48px;
+            border: 4px solid rgba(56, 189, 248, 0.2);
+            border-top-color: #38bdf8;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 1.5rem;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+    </style>
+</head>
+<body>
+    <div>
+        <div class="spinner"></div>
+        <h2 style="font-weight: 600; margin-bottom: 0.5rem;">Completing authentication...</h2>
+        <p style="color: #94a3b8;">Establishing session with NanoIDP</p>
+    </div>
+    <script>
+        window.addEventListener("load", async function () {
+            try {
+                await window.Clerk.load();
+                // Strip clerk query parameters and reload to dashboard
+                const cleanUrl = window.location.origin + window.location.pathname;
+                window.location.replace(cleanUrl);
+            } catch (err) {
+                console.error("Clerk handshake error:", err);
+                window.location.reload();
+            }
+        });
+    </script>
+</body>
+</html>
+            """
+            return render_template_string(handshake_html, publishable_key=self.publishable_key)
+
+        external_url = self._get_external_url()
+
+
         # Redirect to configured Clerk Sign-In URL if set
         if self.sign_in_url:
-            redirect_url = quote(request.url, safe="")
+            redirect_url = quote(external_url, safe="")
             sep = "&" if "?" in self.sign_in_url else "?"
             return redirect(f"{self.sign_in_url}{sep}redirect_url={redirect_url}")
+
 
         # Render integrated Clerk login template
         login_html = """
