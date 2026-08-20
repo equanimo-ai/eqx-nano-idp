@@ -44,6 +44,8 @@ PROTECTED_EXACT_PATHS: Set[str] = {
 }
 
 _jwk_client_cache: Dict[str, PyJWKClient] = {}
+_user_email_cache: Dict[str, str] = {}
+
 
 
 def _get_jwk_client(jwks_url: str) -> PyJWKClient:
@@ -154,8 +156,29 @@ class ClerkAuthService:
             options={"verify_exp": True, "verify_nbf": True},
         )
 
+        # If email is missing from JWT claims, lookup user from Clerk API using secret key
+        user_id = claims.get("sub", "")
+        if not email and user_id and self.secret_key:
+            if user_id in _user_email_cache:
+                email = _user_email_cache[user_id]
+            else:
+                try:
+                    import urllib.request
+                    req = urllib.request.Request(
+                        f"https://api.clerk.com/v1/users/{user_id}",
+                        headers={"Authorization": f"Bearer {self.secret_key}"}
+                    )
+                    with urllib.request.urlopen(req, timeout=5) as resp:
+                        user_data = json.loads(resp.read().decode("utf-8"))
+                        emails = user_data.get("email_addresses", [])
+                        if emails:
+                            email = emails[0].get("email_address", "")
+                            _user_email_cache[user_id] = email
+                except Exception as ex:
+                    logger.warning(f"Could not fetch user details from Clerk API: {ex}")
+        claims["email"] = email
+
         # Validate authorized party / email / domains if configured
-        email = claims.get("email") or claims.get("email_address") or ""
         if self.allowed_emails and email.lower() not in self.allowed_emails:
             raise PermissionError(f"Email {email} is not in allowed list")
 
@@ -246,7 +269,8 @@ class ClerkAuthService:
                 if (window.Clerk.session) {
                     const token = await window.Clerk.session.getToken();
                     if (token) {
-                        document.cookie = "__session=" + encodeURIComponent(token) + "; path=/; max-age=604800; SameSite=Lax";
+                        const secure = window.location.protocol === "https:" ? "; Secure" : "";
+                        document.cookie = "__session=" + token.trim() + "; path=/; max-age=604800; SameSite=Lax" + secure;
                     }
                 }
                 const cleanUrl = window.location.origin + window.location.pathname;
@@ -346,7 +370,8 @@ class ClerkAuthService:
                     try {
                         const token = await window.Clerk.session.getToken();
                         if (token) {
-                            document.cookie = "__session=" + encodeURIComponent(token) + "; path=/; max-age=604800; SameSite=Lax";
+                            const secure = window.location.protocol === "https:" ? "; Secure" : "";
+                            document.cookie = "__session=" + token.trim() + "; path=/; max-age=604800; SameSite=Lax" + secure;
                             window.location.replace(window.location.pathname || "/");
                             return;
                         }
