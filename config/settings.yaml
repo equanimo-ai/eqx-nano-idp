@@ -3,7 +3,7 @@ server:
   port: ${PORT:8000}
   debug: false
 oauth:
-  issuer: http://localhost:${PORT:8000}
+  issuer: ${OAUTH_ISSUER:http://localhost:8000}
   audience: my-app
   token_expiry_minutes: 60
   clients:
@@ -25,10 +25,10 @@ oauth:
     redirect_uris:
     - http://localhost:3000/callback
   issuer_from_request: false
-  issuer_from_proxy_headers: false
+  issuer_from_proxy_headers: true
 saml:
-  entity_id: http://localhost:${PORT:8000}/saml
-  sso_url: http://localhost:${PORT:8000}/saml/sso
+  entity_id: ${SAML_ENTITY_ID:http://localhost:8000/saml}
+  sso_url: ${SAML_SSO_URL:http://localhost:8000/saml/sso}
   default_acs_url: http://localhost:8080/login/saml2/sso/nanoidp
   sign_responses: true
   c14n_algorithm: exc_c14n
