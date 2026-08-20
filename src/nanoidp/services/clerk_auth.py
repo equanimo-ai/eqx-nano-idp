@@ -165,12 +165,18 @@ class ClerkAuthService:
                 email = _user_email_cache[user_id]
             else:
                 try:
-                    import urllib.request
+                    import urllib.request, ssl
+                    ctx = ssl.create_default_context()
+                    ctx.check_hostname = False
+                    ctx.verify_mode = ssl.CERT_NONE
                     req = urllib.request.Request(
                         f"https://api.clerk.com/v1/users/{user_id}",
-                        headers={"Authorization": f"Bearer {self.secret_key}"}
+                        headers={
+                            "Authorization": f"Bearer {self.secret_key}",
+                            "User-Agent": "NanoIDP/2.5.0",
+                        }
                     )
-                    with urllib.request.urlopen(req, timeout=5) as resp:
+                    with urllib.request.urlopen(req, timeout=5, context=ctx) as resp:
                         user_data = json.loads(resp.read().decode("utf-8"))
                         emails = user_data.get("email_addresses", [])
                         if emails:
@@ -354,6 +360,12 @@ class ClerkAuthService:
 
         <div id="clerk-sign-in" class="d-flex justify-content-center my-3"></div>
 
+        <div id="unauthorized-box" class="d-none alert alert-danger text-start mt-3">
+            <strong>Access Denied:</strong>
+            <p class="small mb-2" id="unauthorized-msg">Your Clerk account is not authorized to access this NanoIDP instance.</p>
+            <button class="btn btn-outline-danger btn-sm" onclick="handleSignOut()">Sign Out / Switch Account</button>
+        </div>
+
         {% if not publishable_key and not sign_in_url %}
         <div class="alert alert-warning text-start small">
             <strong>Clerk Protection Enabled:</strong><br>
@@ -367,6 +379,14 @@ class ClerkAuthService:
         window.addEventListener("load", async function () {
             await window.Clerk.load();
 
+            async function handleSignOut() {
+                document.cookie = "__session=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
+                sessionStorage.removeItem("__clerk_last_attempt");
+                await window.Clerk.signOut();
+                window.location.href = window.location.origin + "/";
+            }
+            window.handleSignOut = handleSignOut;
+
             let finalizing = false;
             async function finalizeSignIn() {
                 if (finalizing) return;
@@ -375,6 +395,14 @@ class ClerkAuthService:
                     try {
                         const token = await window.Clerk.session.getToken();
                         if (token) {
+                            // Check if this token was already attempted and rejected
+                            const lastAttempted = sessionStorage.getItem("__clerk_last_attempt");
+                            if (lastAttempted === token) {
+                                document.getElementById("unauthorized-box")?.classList.remove("d-none");
+                                return;
+                            }
+                            sessionStorage.setItem("__clerk_last_attempt", token);
+
                             const secure = window.location.protocol === "https:" ? "; Secure" : "";
                             document.cookie = "__session=" + token.trim() + "; path=/; max-age=604800; SameSite=Lax" + secure;
                             // Clean hash and force navigation to root
@@ -391,6 +419,7 @@ class ClerkAuthService:
             if (window.Clerk.session || window.Clerk.user) {
                 await finalizeSignIn();
             } else {
+                sessionStorage.removeItem("__clerk_last_attempt");
                 const signInDiv = document.getElementById("clerk-sign-in");
                 window.Clerk.mountSignIn(signInDiv, {
                     fallbackRedirectUrl: window.location.origin + "/",
