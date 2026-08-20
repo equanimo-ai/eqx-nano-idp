@@ -45,3 +45,30 @@ jobs:
           # Threshold ratchets upward only (#71); 70 at introduction (73%
           # measured), 75 after #72 covered the wizard (78% measured).
           pytest tests/ --cov=nanoidp --cov-report=term-missing --cov-fail-under=75
+
+  security-scan:
+    name: Security scan (Trivy)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - name: Resolve Trivy suppressions
+        run: |
+          if [[ ! -f .trivyignore ]]; then
+            : > .trivyignore
+          fi
+      - name: Run Trivy vulnerability scanner
+        uses: aquasecurity/trivy-action@v0.36.0
+        with:
+          scan-type: fs
+          scan-ref: .
+          scanners: vuln,misconfig,secret
+          severity: HIGH,CRITICAL
+          ignore-unfixed: true
+          trivyignores: .trivyignore
+          format: table
+          exit-code: '1'
+        env:
+          TRIVY_USERNAME: ${{ github.actor }}
+          TRIVY_PASSWORD: ${{ secrets.GITHUB_TOKEN }}
+
