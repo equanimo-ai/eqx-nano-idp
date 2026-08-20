@@ -31,22 +31,26 @@ def clerk_service():
     )
 
 
-def test_public_paths(clerk_service):
-    """Test that public OAuth, SAML, and health paths are exempt."""
-    assert clerk_service.is_public_path("/health") is True
-    assert clerk_service.is_public_path("/api/health") is True
-    assert clerk_service.is_public_path("/token") is True
-    assert clerk_service.is_public_path("/authorize") is True
-    assert clerk_service.is_public_path("/.well-known/openid-configuration") is True
-    assert clerk_service.is_public_path("/.well-known/jwks.json") is True
-    assert clerk_service.is_public_path("/oauth2/token") is True
-    assert clerk_service.is_public_path("/saml/sso") is True
-    assert clerk_service.is_public_path("/static/css/style.css") is True
+def test_protected_paths(clerk_service):
+    """Test that public OAuth, SAML, and health paths are exempt, while UI paths are protected."""
+    assert clerk_service.is_protected_path("/health") is False
+    assert clerk_service.is_protected_path("/api/health") is False
+    assert clerk_service.is_protected_path("/token") is False
+    assert clerk_service.is_protected_path("/authorize") is False
+    assert clerk_service.is_protected_path("/.well-known/openid-configuration") is False
+    assert clerk_service.is_protected_path("/.well-known/jwks.json") is False
+    assert clerk_service.is_protected_path("/oauth2/token") is False
+    assert clerk_service.is_protected_path("/saml/sso") is False
+    assert clerk_service.is_protected_path("/static/css/style.css") is False
 
     # Protected paths
-    assert clerk_service.is_public_path("/") is False
-    assert clerk_service.is_public_path("/wizard") is False
-    assert clerk_service.is_public_path("/api/config/reload") is False
+    assert clerk_service.is_protected_path("/") is True
+    assert clerk_service.is_protected_path("/wizard") is True
+    assert clerk_service.is_protected_path("/settings") is True
+    assert clerk_service.is_protected_path("/users") is True
+    assert clerk_service.is_protected_path("/clients") is True
+    assert clerk_service.is_protected_path("/api/config/reload") is True
+
 
 
 def test_token_extraction(clerk_service):

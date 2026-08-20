@@ -23,27 +23,24 @@ from flask import (
 
 logger = logging.getLogger(__name__)
 
-# Public paths that MUST stay accessible without Clerk session (OIDC/SAML/OAuth/Health/Static)
-PUBLIC_PREFIXES = (
-    "/oauth2/",
-    "/.well-known/",
-    "/saml/",
-    "/static/",
-    "/api/health",
+# Protected paths that require Clerk authentication (UI, Dashboard, Settings, Config API)
+PROTECTED_PREFIXES = (
+    "/api/config/",
+    "/ui/",
+    "/settings",
+    "/clients",
+    "/users",
+    "/wizard",
+    "/audit",
 )
 
-PUBLIC_EXACT_PATHS: Set[str] = {
-    "/health",
-    "/api/health",
-    "/token",
-    "/authorize",
-    "/userinfo",
-    "/introspect",
-    "/revoke",
-    "/device_authorization",
-    "/favicon.ico",
-    "/clerk/login",
-    "/clerk/logout",
+PROTECTED_EXACT_PATHS: Set[str] = {
+    "/",
+    "/settings",
+    "/clients",
+    "/users",
+    "/wizard",
+    "/audit",
 }
 
 _jwk_client_cache: Dict[str, PyJWKClient] = {}
@@ -114,14 +111,15 @@ class ClerkAuthService:
                 except Exception as e:
                     logger.warning(f"Could not derive Clerk JWKS URL from publishable key: {e}")
 
-    def is_public_path(self, path: str) -> bool:
-        """Check if request path is exempt from Clerk auth."""
-        if path in PUBLIC_EXACT_PATHS:
+    def is_protected_path(self, path: str) -> bool:
+        """Check if request path requires Clerk auth."""
+        if path in PROTECTED_EXACT_PATHS:
             return True
-        for prefix in PUBLIC_PREFIXES:
+        for prefix in PROTECTED_PREFIXES:
             if path.startswith(prefix):
                 return True
         return False
+
 
     def extract_token(self) -> Optional[str]:
         """Extract Clerk JWT session token from request cookies or headers."""
@@ -391,8 +389,8 @@ def init_clerk_auth(app: Flask, config_settings: Any) -> ClerkAuthService:
         if not service.enabled:
             return None
 
-        # Allow public paths (OIDC/SAML/OAuth endpoints, health, static)
-        if service.is_public_path(request.path):
+        # Only enforce Clerk on protected UI/Admin paths
+        if not service.is_protected_path(request.path):
             return None
 
         token = service.extract_token()
