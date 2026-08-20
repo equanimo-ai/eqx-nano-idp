@@ -58,7 +58,7 @@ clerk:
   publishable_key: ${CLERK_PUBLISHABLE_KEY:pk_test_aW4taGFnZmlzaC00NC5jbGVyay5hY2NvdW50cy5kZXYk}
   secret_key: ${CLERK_SECRET_KEY:sk_test_TpttyaVzUzReFTzVB9u1WyuaWtD4Yg8ZpXZ7I3bjDP}
   frontend_api: ${CLERK_FRONTEND_API:in-hagfish-44.clerk.accounts.dev}
-  sign_in_url: ${CLERK_SIGN_IN_URL:}
+  sign_in_url: ${CLERK_SIGN_IN_URL:https://in-hagfish-44.clerk.accounts.dev/sign-in}
   jwks_url: ${CLERK_JWKS_URL:https://in-hagfish-44.clerk.accounts.dev/.well-known/jwks.json}
   allowed_domains:
   - equanimo.ai
