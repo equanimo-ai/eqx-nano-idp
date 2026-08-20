@@ -274,6 +274,8 @@ class Settings(BaseModel):
     clerk_jwks_url: str = Field(default="", description="Clerk JWKS URL")
     clerk_allowed_domains: List[str] = Field(default_factory=list, description="Allowed email domains")
     clerk_allowed_emails: List[str] = Field(default_factory=list, description="Allowed email addresses")
+    clerk_allowed_orgs: List[str] = Field(default_factory=list, description="Allowed Clerk organization IDs")
+
 
 
     @field_validator("saml_roles_attr_name", "saml_groups_attr_name", mode="before")

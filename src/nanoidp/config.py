@@ -191,6 +191,7 @@ class ConfigManager:
             clerk_jwks_url=clerk.get("jwks_url", ""),
             clerk_allowed_domains=clerk.get("allowed_domains", []) or [],
             clerk_allowed_emails=clerk.get("allowed_emails", []) or [],
+            clerk_allowed_orgs=clerk.get("allowed_orgs", []) or [],
         )
 
     def _set_default_settings(self) -> None:

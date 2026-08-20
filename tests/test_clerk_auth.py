@@ -138,3 +138,51 @@ def test_clerk_token_verification(rsa_keypair):
         resp = client.get("/", headers={"Authorization": f"Bearer {token}"})
         assert resp.status_code == 200
         assert resp.data.decode("utf-8") == "dashboard"
+
+
+def test_clerk_org_authorization(rsa_keypair):
+    """Test organization gating with Clerk org_id."""
+    private_key, public_key = rsa_keypair
+    app = Flask(__name__)
+    app.secret_key = "test-secret"
+
+    settings = Settings(
+        clerk_enabled=True,
+        clerk_jwks_url="https://test.clerk.accounts.dev/.well-known/jwks.json",
+        clerk_allowed_orgs=["org_3IAADDh9tenYWKUofjRdltKWc60"],
+    )
+
+    init_clerk_auth(app, settings)
+
+    @app.route("/")
+    def index():
+        return "dashboard"
+
+    client = app.test_client()
+    mock_jwk = MagicMock()
+    mock_jwk.key = public_key
+    mock_client = MagicMock()
+    mock_client.get_signing_key_from_jwt.return_value = mock_jwk
+
+    with patch("nanoidp.services.clerk_auth._get_jwk_client", return_value=mock_client):
+        # 1. Matching org -> allowed
+        valid_payload = {
+            "sub": "user_2test123",
+            "org_id": "org_3IAADDh9tenYWKUofjRdltKWc60",
+            "exp": 9999999999,
+        }
+        token_valid = jwt.encode(valid_payload, private_key, algorithm="RS256")
+        resp = client.get("/", headers={"Authorization": f"Bearer {token_valid}"})
+        assert resp.status_code == 200
+
+        # 2. Different org -> rejected (redirected or 401)
+        invalid_payload = {
+            "sub": "user_2test123",
+            "org_id": "org_other999",
+            "exp": 9999999999,
+        }
+        token_invalid = jwt.encode(invalid_payload, private_key, algorithm="RS256")
+        resp = client.get("/", headers={"Authorization": f"Bearer {token_invalid}"})
+        assert resp.status_code == 200  # Fallback to login HTML template
+        assert b"Authentication Required" in resp.data
+

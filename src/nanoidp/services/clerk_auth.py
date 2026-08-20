@@ -69,6 +69,7 @@ class ClerkAuthService:
         jwks_url: str = "",
         allowed_domains: Optional[List[str]] = None,
         allowed_emails: Optional[List[str]] = None,
+        allowed_orgs: Optional[List[str]] = None,
     ) -> None:
         self.enabled = enabled or bool(os.environ.get("CLERK_ENABLED", "").lower() in ("true", "1"))
         self.publishable_key = (
@@ -85,6 +86,9 @@ class ClerkAuthService:
         ]
         self.allowed_emails = allowed_emails or [
             e.strip().lower() for e in os.environ.get("CLERK_ALLOWED_EMAILS", "").split(",") if e.strip()
+        ]
+        self.allowed_orgs = allowed_orgs or [
+            o.strip() for o in os.environ.get("CLERK_ALLOWED_ORGS", "").split(",") if o.strip()
         ]
 
         # Auto-enable if publishable key, secret key, or JWKS URL is present
@@ -165,6 +169,12 @@ class ClerkAuthService:
             domain = "@" + email.split("@")[-1].lower()
             if not any(domain.endswith(d.lower()) for d in self.allowed_domains):
                 raise PermissionError(f"Domain {domain} is not in allowed list")
+
+        # Validate authorized organization if configured
+        user_org_id = claims.get("org_id") or claims.get("orgId") or (claims.get("org") or {}).get("id") or ""
+        if self.allowed_orgs:
+            if not user_org_id or user_org_id not in self.allowed_orgs:
+                raise PermissionError(f"Organization '{user_org_id}' is not in allowed list: {self.allowed_orgs}")
 
         return claims
 
@@ -291,6 +301,7 @@ def init_clerk_auth(app: Flask, config_settings: Any) -> ClerkAuthService:
         jwks_url=getattr(config_settings, "clerk_jwks_url", ""),
         allowed_domains=getattr(config_settings, "clerk_allowed_domains", []),
         allowed_emails=getattr(config_settings, "clerk_allowed_emails", []),
+        allowed_orgs=getattr(config_settings, "clerk_allowed_orgs", []),
     )
 
     if not service.enabled:
