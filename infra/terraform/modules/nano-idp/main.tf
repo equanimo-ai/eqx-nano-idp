@@ -348,6 +348,10 @@ resource "aws_ecs_service" "this" {
     registry_arn = aws_service_discovery_service.this.arn
   }
 
+  lifecycle {
+    ignore_changes = [task_definition, desired_count]
+  }
+
   tags = var.common_tags
 }
 

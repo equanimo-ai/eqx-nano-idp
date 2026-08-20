@@ -39,3 +39,28 @@ variable "domain_prefix" {
   default     = "idp"
   description = "Subdomain prefix for NanoIDP (e.g. idp.dev.equanimo.io)"
 }
+
+variable "enable_off_hours_schedule" {
+  type        = bool
+  default     = true
+  description = "Enable EventBridge Scheduler start/stop schedule for business hours"
+}
+
+variable "schedule_start_cron" {
+  type        = string
+  default     = "cron(0 9 * * ? *)"
+  description = "Cron expression for starting service (default 09:00 AM ET)"
+}
+
+variable "schedule_stop_cron" {
+  type        = string
+  default     = "cron(0 0 * * ? *)"
+  description = "Cron expression for stopping service (default 12:00 AM / Midnight ET)"
+}
+
+variable "schedule_timezone" {
+  type        = string
+  default     = "America/New_York"
+  description = "Timezone for EventBridge Scheduler"
+}
+
