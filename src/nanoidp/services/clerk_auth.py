@@ -91,10 +91,6 @@ class ClerkAuthService:
             o.strip() for o in os.environ.get("CLERK_ALLOWED_ORGS", "").split(",") if o.strip()
         ]
 
-        # Auto-enable if publishable key, secret key, or JWKS URL is present
-        if not self.enabled and (self.publishable_key or self.secret_key or self.jwks_url or self.frontend_api):
-            self.enabled = True
-
         # Derive JWKS URL from Frontend API / Publishable Key if not explicitly configured
         if self.enabled and not self.jwks_url:
             if self.frontend_api:

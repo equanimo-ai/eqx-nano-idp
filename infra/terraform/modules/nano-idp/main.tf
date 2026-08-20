@@ -300,7 +300,8 @@ resource "aws_ecs_task_definition" "this" {
         { name = "NANOIDP_CONFIG_DIR", value = "/app/config" },
         { name = "NANOIDP_S3_CONFIG_BUCKET", value = aws_s3_bucket.config.id },
         { name = "NANOIDP_S3_CONFIG_PREFIX", value = "" },
-        { name = "OAUTH_ISSUER", value = local.issuer_url }
+        { name = "OAUTH_ISSUER", value = local.issuer_url },
+        { name = "CLERK_ENABLED", value = "true" }
       ]
 
       logConfiguration = {
