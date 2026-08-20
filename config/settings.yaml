@@ -15,13 +15,10 @@ oauth:
     description: Test client for integration tests
   - client_id: multi-aud-client
     client_secret: multi-aud-secret
-    description: Client whose ID Token carries extra audiences (array aud + azp)
-    additional_audiences:
-    - https://api.example.com
-    - urn:service:billing
+    description: no auds
   - client_id: registered-client
     client_secret: registered-secret
-    description: Client with registered redirect URIs (exact matching, issue #67)
+    description: Client with registered redirect URIs (exact matching, issue
     redirect_uris:
     - http://localhost:3000/callback
   issuer_from_request: false
@@ -33,7 +30,6 @@ saml:
   sign_responses: true
   c14n_algorithm: exc_c14n
   strict_binding: false
-  # Roles/groups are not standard SAML attributes; enable and name them here.
   export_roles: false
   export_groups: false
   roles_attr_name: roles
@@ -58,12 +54,15 @@ logging:
   log_token_requests: true
   log_saml_requests: true
 clerk:
-  enabled: ${CLERK_ENABLED:false}
-  publishable_key: ${CLERK_PUBLISHABLE_KEY:}
-  secret_key: ${CLERK_SECRET_KEY:}
-  frontend_api: ${CLERK_FRONTEND_API:}
+  enabled: ${CLERK_ENABLED:true}
+  publishable_key: ${CLERK_PUBLISHABLE_KEY:pk_test_aW4taGFnZmlzaC00NC5jbGVyay5hY2NvdW50cy5kZXYk}
+  secret_key: ${CLERK_SECRET_KEY:sk_test_TpttyaVzUzReFTzVB9u1WyuaWtD4Yg8ZpXZ7I3bjDP}
+  frontend_api: ${CLERK_FRONTEND_API:in-hagfish-44.clerk.accounts.dev}
   sign_in_url: ${CLERK_SIGN_IN_URL:}
-  jwks_url: ${CLERK_JWKS_URL:}
-  allowed_domains: []
+  jwks_url: ${CLERK_JWKS_URL:https://in-hagfish-44.clerk.accounts.dev/.well-known/jwks.json}
+  allowed_domains:
+  - equanimo.ai
   allowed_emails: []
+  allowed_orgs:
+  - org_3IAADDh9tenYWKUofjRdltKWc60
 
