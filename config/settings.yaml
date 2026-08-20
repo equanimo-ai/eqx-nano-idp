@@ -25,7 +25,7 @@ oauth:
     redirect_uris:
     - http://localhost:3000/callback
   issuer_from_request: false
-  issuer_from_proxy_headers: true
+  issuer_from_proxy_headers: false
 saml:
   entity_id: ${SAML_ENTITY_ID:http://localhost:8000/saml}
   sso_url: ${SAML_SSO_URL:http://localhost:8000/saml/sso}
