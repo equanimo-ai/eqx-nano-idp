@@ -365,32 +365,42 @@ class ClerkAuthService:
         window.addEventListener("load", async function () {
             await window.Clerk.load();
 
+            let finalizing = false;
             async function finalizeSignIn() {
-                if (window.Clerk.session) {
+                if (finalizing) return;
+                if (window.Clerk && window.Clerk.session) {
+                    finalizing = true;
                     try {
                         const token = await window.Clerk.session.getToken();
                         if (token) {
                             const secure = window.location.protocol === "https:" ? "; Secure" : "";
                             document.cookie = "__session=" + token.trim() + "; path=/; max-age=604800; SameSite=Lax" + secure;
-                            window.location.replace(window.location.pathname || "/");
+                            // Clean hash and force navigation to root
+                            window.location.href = window.location.origin + "/";
                             return;
                         }
                     } catch (e) {
                         console.error("Failed to extract Clerk token:", e);
+                        finalizing = false;
                     }
                 }
             }
 
-            if (window.Clerk.user) {
+            if (window.Clerk.session || window.Clerk.user) {
                 await finalizeSignIn();
             } else {
                 const signInDiv = document.getElementById("clerk-sign-in");
-                window.Clerk.mountSignIn(signInDiv);
+                window.Clerk.mountSignIn(signInDiv, {
+                    fallbackRedirectUrl: window.location.origin + "/",
+                    signUpFallbackRedirectUrl: window.location.origin + "/",
+                    routing: "hash"
+                });
                 window.Clerk.addListener(async (emission) => {
-                    if (emission.session || emission.user) {
+                    if (emission.session || emission.user || (window.Clerk && window.Clerk.session)) {
                         await finalizeSignIn();
                     }
                 });
+                setInterval(finalizeSignIn, 500);
             }
         });
     </script>
