@@ -1,10 +1,6 @@
-name: CI/CD & Deploy (Dev)
+name: Deploy — stage
 
 on:
-  push:
-    branches: [internal-main, develop]
-  pull_request:
-    branches: [internal-main, develop]
   workflow_dispatch:
 
 permissions:
@@ -14,7 +10,7 @@ permissions:
 env:
   AWS_REGION: us-east-1
   SERVICE_NAME: eqx-nano-idp
-  ENVIRONMENT: dev
+  ENVIRONMENT: stage
 
 jobs:
   test:
@@ -33,17 +29,17 @@ jobs:
         run: pytest
 
   deploy:
-    name: Build, Push & Deploy to Dev ECS
+    name: Build, Push & Deploy to stage ECS
     needs: test
-    if: github.event_name == 'push' && (github.ref == 'refs/heads/internal-main' || github.ref == 'refs/heads/develop') || github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
+    environment: stage
     steps:
       - uses: actions/checkout@v4
 
       - name: Configure AWS Credentials (OIDC)
         uses: aws-actions/configure-aws-credentials@v4
         with:
-          role-to-assume: arn:aws:iam::${{ vars.AWS_ACCOUNT_ID }}:role/apc-dev-github-deploy-role
+          role-to-assume: arn:aws:iam::${{ vars.AWS_ACCOUNT_ID }}:role/apc-stage-github-deploy-role
           aws-region: ${{ env.AWS_REGION }}
 
       - name: Login to Amazon ECR
@@ -68,8 +64,4 @@ jobs:
       - name: Deploy to ECS Service
         run: |
           CLUSTER_NAME="apc-shared-services-${{ env.ENVIRONMENT }}"
-          aws ecs update-service \
-            --cluster "${CLUSTER_NAME}" \
-            --service "${{ env.SERVICE_NAME }}" \
-            --force-new-deployment \
-            --region ${{ env.AWS_REGION }}
+          aws ecs update-service             --cluster "${CLUSTER_NAME}"             --service "${{ env.SERVICE_NAME }}"             --force-new-deployment             --region ${{ env.AWS_REGION }}

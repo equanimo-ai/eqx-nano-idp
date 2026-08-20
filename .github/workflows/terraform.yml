@@ -29,8 +29,9 @@ jobs:
       - name: Configure AWS Credentials (OIDC)
         uses: aws-actions/configure-aws-credentials@v4
         with:
-          role-to-assume: arn:aws:iam::169802850860:role/apc-dev-github-deploy-role
+          role-to-assume: arn:aws:iam::${{ vars.AWS_ACCOUNT_ID }}:role/eqx-nano-idp-deploy-${{ env.ENVIRONMENT }}
           aws-region: ${{ env.AWS_REGION }}
+
 
       - uses: hashicorp/setup-terraform@v3
         with:

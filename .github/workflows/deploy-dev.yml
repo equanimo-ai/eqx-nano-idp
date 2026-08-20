@@ -1,10 +1,6 @@
-name: CI/CD & Deploy (Dev)
+name: Deploy — dev
 
 on:
-  push:
-    branches: [internal-main, develop]
-  pull_request:
-    branches: [internal-main, develop]
   workflow_dispatch:
 
 permissions:
@@ -33,10 +29,10 @@ jobs:
         run: pytest
 
   deploy:
-    name: Build, Push & Deploy to Dev ECS
+    name: Build, Push & Deploy to dev ECS
     needs: test
-    if: github.event_name == 'push' && (github.ref == 'refs/heads/internal-main' || github.ref == 'refs/heads/develop') || github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
+    environment: dev
     steps:
       - uses: actions/checkout@v4
 
@@ -68,8 +64,4 @@ jobs:
       - name: Deploy to ECS Service
         run: |
           CLUSTER_NAME="apc-shared-services-${{ env.ENVIRONMENT }}"
-          aws ecs update-service \
-            --cluster "${CLUSTER_NAME}" \
-            --service "${{ env.SERVICE_NAME }}" \
-            --force-new-deployment \
-            --region ${{ env.AWS_REGION }}
+          aws ecs update-service             --cluster "${CLUSTER_NAME}"             --service "${{ env.SERVICE_NAME }}"             --force-new-deployment             --region ${{ env.AWS_REGION }}
