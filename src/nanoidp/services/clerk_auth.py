@@ -157,6 +157,7 @@ class ClerkAuthService:
         )
 
         # If email is missing from JWT claims, lookup user from Clerk API using secret key
+        email = str(claims.get("email") or claims.get("email_address") or "")
         user_id = claims.get("sub", "")
         if not email and user_id and self.secret_key:
             if user_id in _user_email_cache:
