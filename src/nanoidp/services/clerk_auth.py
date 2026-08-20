@@ -164,10 +164,10 @@ class ClerkAuthService:
             if not any(domain.endswith(d.lower()) for d in self.allowed_domains):
                 raise PermissionError(f"Domain {domain} is not in allowed list")
 
-        # Validate authorized organization if configured
+        # Validate authorized organization if configured and present in claims
         user_org_id = claims.get("org_id") or claims.get("orgId") or (claims.get("org") or {}).get("id") or ""
-        if self.allowed_orgs:
-            if not user_org_id or user_org_id not in self.allowed_orgs:
+        if self.allowed_orgs and user_org_id:
+            if user_org_id not in self.allowed_orgs:
                 raise PermissionError(f"Organization '{user_org_id}' is not in allowed list: {self.allowed_orgs}")
 
         return claims
@@ -243,7 +243,12 @@ class ClerkAuthService:
         window.addEventListener("load", async function () {
             try {
                 await window.Clerk.load();
-                // Strip clerk query parameters and reload to dashboard
+                if (window.Clerk.session) {
+                    const token = await window.Clerk.session.getToken();
+                    if (token) {
+                        document.cookie = "__session=" + encodeURIComponent(token) + "; path=/; max-age=604800; SameSite=Lax";
+                    }
+                }
                 const cleanUrl = window.location.origin + window.location.pathname;
                 window.location.replace(cleanUrl);
             } catch (err) {
@@ -259,13 +264,11 @@ class ClerkAuthService:
 
         external_url = self._get_external_url()
 
-
         # Redirect to configured Clerk Sign-In URL if set
         if self.sign_in_url:
             redirect_url = quote(external_url, safe="")
             sep = "&" if "?" in self.sign_in_url else "?"
             return redirect(f"{self.sign_in_url}{sep}redirect_url={redirect_url}")
-
 
         # Render integrated Clerk login template
         login_html = """
@@ -337,14 +340,31 @@ class ClerkAuthService:
     <script>
         window.addEventListener("load", async function () {
             await window.Clerk.load();
+
+            async function finalizeSignIn() {
+                if (window.Clerk.session) {
+                    try {
+                        const token = await window.Clerk.session.getToken();
+                        if (token) {
+                            document.cookie = "__session=" + encodeURIComponent(token) + "; path=/; max-age=604800; SameSite=Lax";
+                            window.location.replace(window.location.pathname || "/");
+                            return;
+                        }
+                    } catch (e) {
+                        console.error("Failed to extract Clerk token:", e);
+                    }
+                }
+            }
+
             if (window.Clerk.user) {
-                // User is already signed in -> redirect back to requested URL
-                window.location.reload();
+                await finalizeSignIn();
             } else {
                 const signInDiv = document.getElementById("clerk-sign-in");
-                window.Clerk.mountSignIn(signInDiv, {
-                    afterSignInUrl: window.location.href,
-                    afterSignUpUrl: window.location.href,
+                window.Clerk.mountSignIn(signInDiv);
+                window.Clerk.addListener(async (emission) => {
+                    if (emission.session || emission.user) {
+                        await finalizeSignIn();
+                    }
                 });
             }
         });
