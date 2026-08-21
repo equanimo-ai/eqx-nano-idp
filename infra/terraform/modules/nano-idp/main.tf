@@ -197,12 +197,16 @@ resource "aws_security_group" "this" {
 
 # ── Target Group & ALB Routing ────────────────────────────────────────────────
 resource "aws_lb_target_group" "this" {
-  name                 = "${var.name_prefix}-tg"
+  name                 = var.name_prefix
   port                 = local.container_port
   protocol             = "HTTP"
   vpc_id               = data.aws_ssm_parameter.vpc_id.value
   target_type          = "ip"
   deregistration_delay = 30
+
+  lifecycle {
+    create_before_destroy = true
+  }
 
   health_check {
     enabled             = true
