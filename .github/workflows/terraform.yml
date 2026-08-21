@@ -29,7 +29,10 @@ jobs:
       - name: Configure AWS Credentials (OIDC)
         uses: aws-actions/configure-aws-credentials@v4
         with:
-          role-to-assume: arn:aws:iam::${{ vars.AWS_ACCOUNT_ID }}:role/${{ vars.AWS_SERVICE_DEPLOY_ROLE_PREFIX }}-${{ env.ENVIRONMENT }}
+          # AWS_SERVICE_DEPLOY_ROLE_PREFIX names a per-repo role that does not
+          # exist in the dev account; only the two shared roles do. This job
+          # runs terraform, so it takes the infra role.
+          role-to-assume: arn:aws:iam::${{ vars.AWS_ACCOUNT_ID_DEV }}:role/${{ vars.AWS_INFRA_ROLE_NAME_DEV }}
           aws-region: ${{ env.AWS_REGION }}
 
 
