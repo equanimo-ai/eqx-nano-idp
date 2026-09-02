@@ -12,7 +12,7 @@ on:
 
 jobs:
   http-e2e:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04-arm
     # The agent has per-request timeouts, but a wedged server or a hung
     # login flow would otherwise burn the 360-minute Actions default.
     timeout-minutes: 10
@@ -97,7 +97,7 @@ jobs:
           cat server-saml.log 2>/dev/null || true
 
   mcp-e2e:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04-arm
     # stdio has no request timeouts: if the server starts but hangs in
     # initialize/list_tools/call_tool, only this job timeout saves the run.
     timeout-minutes: 5
