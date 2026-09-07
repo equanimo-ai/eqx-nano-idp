@@ -46,3 +46,9 @@ book/book/
 
 # Transient backups from atomic YAML writes
 config/*.yaml.bak
+
+# Terraform
+**/.terraform/*
+*.tfstate
+*.tfstate.*
+.terraform.lock.hcl
