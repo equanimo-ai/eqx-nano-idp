@@ -41,4 +41,3 @@ __all__ = [
     "RevocationStore",
     "get_revocation_store",
 ]
-

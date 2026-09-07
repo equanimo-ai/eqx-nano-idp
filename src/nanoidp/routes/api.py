@@ -226,30 +226,3 @@ def keys_info() -> ResponseReturnValue:
         "previous_kids": [k.kid for k in crypto.previous_keys],
         "max_previous_keys": crypto.max_previous_keys,
     })
-
-
-@api_bp.route("/config/sync", methods=["POST", "GET"])
-def config_sync() -> ResponseReturnValue:
-    """Trigger S3 configuration sync."""
-    config = get_config()
-    if not hasattr(config, "s3_sync") or not config.s3_sync.is_enabled:
-        return jsonify({"success": False, "message": "S3 configuration sync is not enabled"}), 400
-
-    pulled = config.s3_sync.pull_all()
-    if pulled:
-        config.reload()
-        return jsonify({
-            "success": True,
-            "message": "Successfully synchronized configuration from S3",
-            "bucket": config.s3_sync.bucket_name,
-            "prefix": config.s3_sync.prefix,
-        })
-    return jsonify({"success": False, "message": "Failed to sync configuration from S3"}), 500
-
-
-@api_bp.route("/config/reload", methods=["POST"])
-def config_reload() -> ResponseReturnValue:
-    """Reload configuration from disk (and S3 if enabled)."""
-    config = get_config()
-    config.reload()
-    return jsonify({"success": True, "message": "Configuration reloaded successfully"})

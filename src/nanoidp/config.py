@@ -64,10 +64,6 @@ class ConfigManager:
         self.settings: Settings = Settings()
         self.users: Dict[str, User] = {}
         self.default_user: str = "admin"
-        from .services.s3_sync import S3ConfigSync
-        self.s3_sync = S3ConfigSync(self.config_dir)
-        if self.s3_sync.is_enabled:
-            self.s3_sync.pull_all()
         self._load_config()
 
     def _find_config_dir(self) -> str:
@@ -313,9 +309,7 @@ class ConfigManager:
         return None
 
     def reload(self) -> None:
-        """Reload configuration from files (and pull latest from S3 if enabled)."""
-        if hasattr(self, "s3_sync") and self.s3_sync.is_enabled:
-            self.s3_sync.pull_all()
+        """Reload configuration from files."""
         self._load_config()
         logger.info("Configuration reloaded")
 
@@ -336,8 +330,6 @@ class ConfigManager:
 
         apply_users_document(document, self.users, self.default_user)
         atomic_write_yaml(users_file, document)
-        if hasattr(self, "s3_sync") and self.s3_sync.is_enabled:
-            self.s3_sync.push_file("users.yaml")
 
     def _save_settings(self) -> None:
         """Save settings to settings.yaml (shared builder, #83).
@@ -354,8 +346,6 @@ class ConfigManager:
 
         apply_settings_document(document, self.settings)
         atomic_write_yaml(settings_file, document)
-        if hasattr(self, "s3_sync") and self.s3_sync.is_enabled:
-            self.s3_sync.push_file("settings.yaml")
 
 
 # Global config instance

@@ -3,7 +3,7 @@ server:
   port: ${PORT:8000}
   debug: false
 oauth:
-  issuer: ${OAUTH_ISSUER:http://localhost:8000}
+  issuer: http://localhost:${PORT:8000}
   audience: my-app
   token_expiry_minutes: 60
   clients:
@@ -15,9 +15,8 @@ oauth:
     description: Test client for integration tests
   - client_id: multi-aud-client
     client_secret: multi-aud-secret
-    description: Client with multiple audiences (legacy and URI form)
+    description: Client whose ID Token carries extra audiences (array aud + azp)
     additional_audiences:
-    - legacy-api
     - https://api.example.com
     - urn:service:billing
   - client_id: registered-client
@@ -28,12 +27,13 @@ oauth:
   issuer_from_request: false
   issuer_from_proxy_headers: false
 saml:
-  entity_id: ${SAML_ENTITY_ID:http://localhost:8000/saml}
-  sso_url: ${SAML_SSO_URL:http://localhost:8000/saml/sso}
+  entity_id: http://localhost:${PORT:8000}/saml
+  sso_url: http://localhost:${PORT:8000}/saml/sso
   default_acs_url: http://localhost:8080/login/saml2/sso/nanoidp
   sign_responses: true
   c14n_algorithm: exc_c14n
   strict_binding: false
+  # Roles/groups are not standard SAML attributes; enable and name them here.
   export_roles: false
   export_groups: false
   roles_attr_name: roles
