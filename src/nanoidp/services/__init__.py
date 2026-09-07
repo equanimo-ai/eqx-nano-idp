@@ -2,7 +2,6 @@
 
 from .audit import AuditLog, get_audit_log
 from .auth_code import AuthCodeStore, AuthorizationCode, get_auth_code_store
-from .clerk import clerk_frontend_api, clerk_username, verify_clerk_session
 from .crypto import CryptoService, get_crypto_service, init_crypto_service
 from .device_code import (
     DeviceCodeGrant,
@@ -18,9 +17,6 @@ from .yaml_writer import YamlWriter, get_yaml_writer
 
 __all__ = [
     "build_discovery_document",
-    "clerk_frontend_api",
-    "clerk_username",
-    "verify_clerk_session",
     "CryptoService",
     "get_crypto_service",
     "init_crypto_service",

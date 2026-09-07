@@ -119,13 +119,6 @@ def create_app(config_dir: Optional[str] = None, profile: Optional[str] = None) 
     def inject_version() -> dict[str, str]:
         return {"app_version": __version__}
 
-    # Lets base.html's sidebar route "sign out" through the Clerk-aware logout
-    # (routes/ui.py's logout_clerk) instead of the plain one whenever Clerk is
-    # configured, without every route having to pass this through explicitly.
-    @app.context_processor
-    def inject_clerk_enabled() -> dict[str, bool]:
-        return {"clerk_enabled": bool(get_config().settings.clerk_publishable_key)}
-
     # Health check at root for backward compatibility
     @app.route("/health")
     def health() -> Response:

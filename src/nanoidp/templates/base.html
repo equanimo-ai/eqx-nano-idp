@@ -284,11 +284,11 @@
         {% if current_user %}
         <div class="position-absolute bottom-0 w-100 p-3 border-top" style="border-color: rgba(255,255,255,0.1) !important;">
             <div class="d-flex align-items-center text-white">
-                <div class="user-avatar me-2 flex-shrink-0">{{ current_user[0]|upper }}</div>
-                <div class="flex-grow-1 overflow-hidden" style="min-width: 0;">
-                    <small class="d-block text-truncate" title="{{ current_user }}">{{ current_user }}</small>
+                <div class="user-avatar me-2">{{ current_user[0]|upper }}</div>
+                <div class="flex-grow-1">
+                    <small class="d-block">{{ current_user }}</small>
                 </div>
-                <a href="{{ url_for('ui.logout_clerk') if clerk_enabled else url_for('ui.logout') }}" class="btn btn-sm btn-outline-light flex-shrink-0">
+                <a href="{{ url_for('ui.logout') }}" class="btn btn-sm btn-outline-light">
                     <i class="bi bi-box-arrow-right"></i>
                 </a>
             </div>

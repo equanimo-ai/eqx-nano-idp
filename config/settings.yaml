@@ -52,13 +52,6 @@ allowed_identity_classes:
 session:
   secret_key: dev-secret-key-change-in-production
   permanent: true
-# Optional: protect the admin Web UI (this dashboard) with Clerk instead of,
-# or alongside, the built-in username/password login. Does not affect the
-# OAuth2/OIDC/SAML endpoints NanoIDP issues to relying parties. Requires
-# `pip install nanoidp[clerk]`. Leave unset to keep using the plain login form.
-clerk:
-  publishable_key: ${CLERK_PUBLISHABLE_KEY}
-  secret_key: ${CLERK_SECRET_KEY}
 logging:
   level: INFO
   format: '%(asctime)s - %(name)s - %(levelname)s - %(message)s'

@@ -112,7 +112,6 @@ class ConfigManager:
         saml = data.get("saml", {})
         jwt_config = data.get("jwt", {})
         session = data.get("session", {})
-        clerk = data.get("clerk", {})
         logging_config = data.get("logging", {})
 
         # Parse OAuth clients
@@ -173,9 +172,6 @@ class ConfigManager:
             allowed_identity_classes=data.get("allowed_identity_classes", []),
             # Session
             secret_key=session.get("secret_key", "dev-secret-key-change-in-production"),
-            # Clerk (optional, admin Web UI login only)
-            clerk_publishable_key=clerk.get("publishable_key"),
-            clerk_secret_key=clerk.get("secret_key"),
             # Logging
             log_level=logging_config.get("level", "INFO"),
             log_token_requests=logging_config.get("log_token_requests", True),
