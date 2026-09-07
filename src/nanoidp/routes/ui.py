@@ -7,6 +7,7 @@ import json
 import logging
 import secrets
 from io import StringIO
+from typing import Optional
 
 from flask import (
     Blueprint,
@@ -21,12 +22,44 @@ from flask import (
 from flask.typing import ResponseReturnValue
 
 from ..config import OAuthClient, User, get_config
-from ..services import get_audit_log, get_token_service, get_yaml_writer
+from ..services import (
+    clerk_frontend_api,
+    clerk_username,
+    get_audit_log,
+    get_token_service,
+    get_yaml_writer,
+    verify_clerk_session,
+)
 from ._audit import audit_event
 
 logger = logging.getLogger(__name__)
 
 ui_bp = Blueprint("ui", __name__)
+
+# Endpoints reachable without a session; every other ui_bp route requires one.
+_PUBLIC_ENDPOINTS = {"ui.login", "ui.login_clerk", "ui.logout_clerk"}
+
+
+def _safe_next(next_value: Optional[str]) -> str:
+    """Restrict post-login redirects to same-site relative paths.
+
+    'next' round-trips through a query string and a hidden form field, both
+    client-controlled, so an absolute or protocol-relative value (e.g.
+    '//evil.example.com') is rejected in favor of the dashboard - otherwise
+    login would become an open redirect.
+    """
+    if next_value and next_value.startswith("/") and not next_value.startswith("//"):
+        return next_value
+    return url_for("ui.index")
+
+
+@ui_bp.before_request
+def _require_login() -> Optional[ResponseReturnValue]:
+    """Gate every admin/config page behind a session; /login itself stays reachable."""
+    if request.endpoint in _PUBLIC_ENDPOINTS or session.get("user"):
+        return None
+    target = request.full_path if request.query_string else request.path
+    return redirect(url_for("ui.login", next=target))
 
 
 # ==================== Dashboard ====================
@@ -60,18 +93,25 @@ def login() -> ResponseReturnValue:
 
     if request.method == "GET":
         error = request.args.get("error")
+        next_url = _safe_next(request.args.get("next"))
+        clerk_key = config.settings.clerk_publishable_key
         return render_template(
             "login.html",
             error=error,
             users=list(config.users.keys()),
+            next=next_url,
+            clerk_publishable_key=clerk_key,
+            clerk_frontend_api=clerk_frontend_api(clerk_key) if clerk_key else None,
+            clerk_force_redirect_url=url_for("ui.login_clerk", next=next_url) if clerk_key else None,
         )
 
     # POST: validate credentials
     username = request.form.get("username", "").strip()
     password = request.form.get("password", "")
+    next_url = _safe_next(request.form.get("next"))
 
     if not username or not password:
-        return redirect(url_for("ui.login", error="Username and password required"))
+        return redirect(url_for("ui.login", error="Username and password required", next=next_url))
 
     user = config.authenticate(username, password)
     if not user:
@@ -82,7 +122,7 @@ def login() -> ResponseReturnValue:
             username=username,
             details={"reason": "Invalid credentials"},
         )
-        return redirect(url_for("ui.login", error="Invalid credentials"))
+        return redirect(url_for("ui.login", error="Invalid credentials", next=next_url))
 
     # Create session
     session["user"] = username
@@ -95,7 +135,52 @@ def login() -> ResponseReturnValue:
         username=username,
     )
 
-    return redirect(url_for("ui.index"))
+    return redirect(next_url)
+
+
+@ui_bp.route("/login/clerk")
+def login_clerk() -> ResponseReturnValue:
+    """Finish login after the embedded Clerk widget on /login redirects here.
+
+    Clerk's JS SDK authenticates entirely client-side and, on success,
+    navigates the browser to this URL with its own session cookie already
+    set. We verify that cookie server-side and mirror it into NanoIDP's own
+    Flask session - the same session every other admin route checks.
+    """
+    config = get_config()
+    next_url = _safe_next(request.args.get("next"))
+    secret_key = config.settings.clerk_secret_key
+
+    if not secret_key:
+        return redirect(url_for("ui.login", error="Clerk is not configured", next=next_url))
+
+    payload = verify_clerk_session(
+        request,
+        secret_key=secret_key,
+        authorized_party=request.host_url.rstrip("/"),
+    )
+    if payload is None:
+        audit_event(
+            "login",
+            "failed",
+            endpoint="/login/clerk",
+            details={"reason": "Clerk session not verified"},
+        )
+        return redirect(url_for("ui.login", error="Clerk sign-in could not be verified", next=next_url))
+
+    username = clerk_username(payload)
+    session["user"] = username
+    session.permanent = True
+
+    audit_event(
+        "login",
+        "success",
+        endpoint="/login/clerk",
+        username=username,
+        details={"provider": "clerk"},
+    )
+
+    return redirect(next_url)
 
 
 @ui_bp.route("/logout")
@@ -113,6 +198,39 @@ def logout() -> ResponseReturnValue:
         )
 
     return redirect(url_for("ui.index"))
+
+
+@ui_bp.route("/logout/clerk")
+def logout_clerk() -> ResponseReturnValue:
+    """Sign out of both NanoIDP's own session and Clerk's browser session.
+
+    Clerk's session cookie lives on Clerk's own domain, independent of
+    NanoIDP's Flask session - clearing only the latter (plain /logout) leaves
+    an already-signed-in Clerk browser to silently re-complete login the next
+    time /login is visited. This clears our session the same way, then runs
+    Clerk.signOut() client-side before landing back on /login.
+    """
+    username = session.get("user")
+    session.clear()
+
+    if username:
+        audit_event(
+            "logout",
+            "success",
+            endpoint="/logout/clerk",
+            username=username,
+        )
+
+    config = get_config()
+    clerk_key = config.settings.clerk_publishable_key
+    if not clerk_key:
+        return redirect(url_for("ui.login"))
+
+    return render_template(
+        "logout_clerk.html",
+        clerk_publishable_key=clerk_key,
+        clerk_frontend_api=clerk_frontend_api(clerk_key),
+    )
 
 
 # ==================== Users Management ====================

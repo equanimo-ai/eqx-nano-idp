@@ -239,6 +239,22 @@ class Settings(BaseModel):
     # Session
     secret_key: str = Field(default="dev-secret-key-change-in-production", description="Flask secret key")
 
+    # Clerk (optional third-party sign-in for the admin Web UI only; the
+    # OAuth2/OIDC/SAML endpoints NanoIDP issues to relying parties are
+    # unaffected). Unset by default - the admin login page falls back to the
+    # built-in username/password form.
+    clerk_publishable_key: Optional[str] = Field(
+        default=None,
+        description="Clerk publishable key (pk_...), used client-side to render "
+        "the embedded sign-in widget on the admin /login page.",
+    )
+    clerk_secret_key: Optional[str] = Field(
+        default=None,
+        description="Clerk secret key (sk_...), used server-side to verify a "
+        "Clerk session before mirroring it into the admin Web UI's own "
+        "session. Requires the 'clerk' extra (pip install nanoidp[clerk]).",
+    )
+
     # Logging
     log_level: str = Field(default="INFO", description="Logging level")
     log_token_requests: bool = Field(default=True, description="Log token requests")

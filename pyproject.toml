@@ -69,6 +69,12 @@ dev = [
     "types-jsonschema",
     "requests>=2.31.0",  # examples/test_agent.py (e2e)
 ]
+# Only needed when settings.yaml sets clerk.secret_key to protect the admin
+# Web UI with Clerk (see routes/ui.py login_clerk); imported lazily so a
+# plain install never pays for it.
+clerk = [
+    "clerk-backend-api>=3.0.0",
+]
 
 [project.scripts]
 nanoidp = "nanoidp.__main__:main"
@@ -132,6 +138,9 @@ module = [
     "signxml.*",
     "flask_cors.*",
     "flask_limiter.*",
+    # Optional 'clerk' extra (services/clerk.py) - not installed by default,
+    # so it's expected to be missing outside a clerk-enabled install.
+    "clerk_backend_api.*",
 ]
 ignore_missing_imports = true
 
