@@ -6,7 +6,7 @@ Synchronizes YAML configurations and certificates between local filesystem and a
 import logging
 import os
 from pathlib import Path
-from typing import Optional
+from typing import Any, Optional
 
 logger = logging.getLogger(__name__)
 
@@ -30,9 +30,9 @@ class S3ConfigSync:
         return bool(self.bucket_name)
 
     @property
-    def client(self):
+    def client(self) -> Any:
         if self._s3_client is None and self.is_enabled:
-            import boto3
+            import boto3  # type: ignore[import-untyped]
             self._s3_client = boto3.client("s3")
         return self._s3_client
 

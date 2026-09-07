@@ -11,7 +11,7 @@ Features:
 - Web UI for monitoring and testing
 """
 try:
-    from importlib.metadata import PackageNotFoundError, version
+    from importlib.metadata import version
     __version__ = version("nanoidp")
 except Exception:
     __version__ = "2.5.0"
