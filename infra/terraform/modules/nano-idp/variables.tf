@@ -62,3 +62,12 @@ variable "common_tags" {
   default = {}
 }
 
+variable "capacity_provider_strategy" {
+  type = list(object({
+    capacity_provider = string
+    weight            = number
+    base              = optional(number, 0)
+  }))
+  default     = [{ capacity_provider = "FARGATE", weight = 100 }]
+  description = "On-demand by default; dev sets FARGATE_SPOT in envs/dev/dev.tfvars."
+}
