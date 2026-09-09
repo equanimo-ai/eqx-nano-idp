@@ -335,6 +335,10 @@ resource "aws_ecs_service" "this" {
   task_definition = aws_ecs_task_definition.this.arn
   desired_count   = var.desired_count
 
+  # Required by the provider whenever capacity_provider_strategy changes: the
+  # switch is applied as a rolling deployment, not a service replacement.
+  force_new_deployment = true
+
   dynamic "capacity_provider_strategy" {
     for_each = var.capacity_provider_strategy
     content {
