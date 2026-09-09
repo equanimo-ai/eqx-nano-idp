@@ -1,6 +1,15 @@
 name: Terraform (Dev)
 
 on:
+  # Infra changes must reach AWS on merge. Without this the workflow was
+  # dispatch-only, so merged Terraform sat unapplied and the repo drifted from
+  # the account -- a green "CI/CD & Deploy (Dev)" run only means the image was
+  # pushed, it never planned or applied.
+  push:
+    branches: [internal-main]
+    paths:
+      - "infra/terraform/**"
+      - ".github/workflows/terraform.yml"
   workflow_dispatch:
 
 concurrency:
