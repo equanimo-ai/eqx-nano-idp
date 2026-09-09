@@ -1,12 +1,13 @@
 module "nano_idp" {
   source = "./modules/nano-idp"
 
-  environment   = var.environment
-  name_prefix   = local.name_prefix
-  image_tag     = var.image_tag
-  cpu           = var.cpu
-  memory        = var.memory
+  environment                = var.environment
+  name_prefix                = local.name_prefix
+  image_tag                  = var.image_tag
+  cpu                        = var.cpu
+  memory                     = var.memory
   desired_count              = var.desired_count
+  capacity_provider_strategy = var.capacity_provider_strategy
   domain_prefix              = var.domain_prefix
   enable_off_hours_schedule  = var.enable_off_hours_schedule
   schedule_start_cron        = var.schedule_start_cron
