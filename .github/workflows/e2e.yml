@@ -6,9 +6,9 @@ name: E2E
 
 on:
   pull_request:
-    branches: [main]
+    branches: [internal-main]
   push:
-    branches: [main]
+    branches: [internal-main]
 
 jobs:
   http-e2e:
