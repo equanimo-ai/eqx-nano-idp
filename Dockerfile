@@ -29,8 +29,13 @@ COPY config/ ./config/
 # Install the package
 RUN pip install --no-cache-dir .
 
-# Create keys directory
-RUN mkdir -p /app/keys
+# Create keys directory, and a non-root user that owns the two paths the app
+# writes at runtime: signing keys (/app/keys) and config saves / S3 sync
+# (/app/config).
+RUN mkdir -p /app/keys \
+    && useradd --system --uid 10001 --no-create-home nanoidp \
+    && chown -R nanoidp /app/keys /app/config
+USER nanoidp
 
 # Environment variables
 ENV PYTHONUNBUFFERED=1
