@@ -1,1 +1,21 @@
 # Accepted risks for Trivy scan. Remove an entry to make CI enforce it again.
+
+# infra/terraform/modules/nano-idp/main.tf -- aws_security_group.this egress.
+# The task pulls its image from ECR, and the shared VPC has an S3 gateway
+# endpoint but no ecr.api / ecr.dkr interface endpoints (checked in dev
+# 2026-10-02), so ECR traffic leaves through NAT and needs outbound
+# 0.0.0.0/0. Ingress is already limited to the ALB security group. Narrow
+# this to the S3 prefix list plus HTTPS once ECR interface endpoints exist.
+AWS-0104
+
+# infra/terraform/modules/nano-idp/main.tf -- aws_ecr_repository.this.
+# Deploys push both :<sha> and :latest, and envs/dev sets image_tag = "latest",
+# so IMMUTABLE tags would reject every redeploy. Make the task use the :<sha>
+# tag and stop pushing :latest, then flip image_tag_mutability.
+AWS-0031
+
+# infra/terraform/modules/nano-idp/main.tf -- aws_s3_bucket.config.
+# The config bucket is encrypted with SSE-S3 (AES256), is private with all
+# public access blocked, and holds mock-IdP config only. A customer-managed
+# KMS key would add key policy and IAM grants for no change in who can read it.
+AWS-0132
