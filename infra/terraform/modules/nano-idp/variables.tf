@@ -42,13 +42,13 @@ variable "enable_off_hours_schedule" {
 variable "schedule_start_cron" {
   type        = string
   default     = "cron(0 9 * * ? *)"
-  description = "Cron expression for starting service (default 09:00 AM ET)"
+  description = "Cron expression for starting service (default 09:00 AM ET; dev overrides in envs/dev/dev.tfvars)"
 }
 
 variable "schedule_stop_cron" {
   type        = string
   default     = "cron(0 0 * * ? *)"
-  description = "Cron expression for stopping service (default 12:00 AM / Midnight ET)"
+  description = "Cron expression for stopping service (default 12:00 AM / Midnight ET; dev overrides in envs/dev/dev.tfvars)"
 }
 
 variable "schedule_timezone" {

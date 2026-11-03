@@ -1,6 +1,7 @@
 # Business-hours scale-to-zero schedule matching other ECS microservices
 # (eqx-embedding-service, eqx-policy-dsl-compiler, eqx-evaluation-api).
-# Window: 09:00 - 00:00 America/New_York (09:00 AM - Midnight ET).
+# Default window: 09:00 - 00:00 America/New_York (09:00 AM - Midnight ET).
+# Dev override (envs/dev/dev.tfvars): 07:30 - 22:00 America/Chicago.
 #
 # EventBridge Scheduler's ECS "universal target" calls ecs:UpdateService
 # directly -- no Lambda needed.
