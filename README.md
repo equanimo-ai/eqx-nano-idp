@@ -12,7 +12,7 @@
 | `NANOIDP_S3_CONFIG_PREFIX` | S3 object prefix/folder | `""` (bucket root) |
 | `NANOIDP_CONFIG_DIR` | Local container configuration directory | `/app/config` |
 | `PORT` | Listening port | `8000` |
-| `OAUTH_ISSUER` | Public OIDC issuer URL | Derived from request or `https://idp.${domain_suffix}` |
+| `OAUTH_ISSUER` | Public OIDC issuer URL | `http://localhost:8000` (or derived from the request when `issuer_from_request: true`) |
 
 ## Features
 
