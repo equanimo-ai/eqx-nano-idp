@@ -67,3 +67,22 @@ removed {
     destroy = false
   }
 }
+
+# Retention for the kept ECR repository (eqx-nano-idp, left in AWS by the removed block
+# above). Restores the module's policy, which the decommission apply destroyed: keep the
+# last 30 images, expire the rest. Referenced by name, so the repo itself is not managed here.
+resource "aws_ecr_lifecycle_policy" "nano_idp" {
+  repository = "eqx-nano-idp"
+  policy = jsonencode({
+    rules = [{
+      rulePriority = 1
+      description  = "Keep last 30 tagged images"
+      selection = {
+        tagStatus   = "any"
+        countType   = "imageCountMoreThan"
+        countNumber = 30
+      }
+      action = { type = "expire" }
+    }]
+  })
+}
