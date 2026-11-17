@@ -1,19 +1,8 @@
 <h1 align="center">eqx-nano-idp</h1>
 
 <p align="center">
-  A lightweight, configurable Identity Provider (OAuth2 / OIDC / SAML 2.0) for Equanimo Platform running on AWS ECS Fargate with Amazon S3 configuration management.
+  A lightweight, configurable Identity Provider (OAuth2 / OIDC / SAML 2.0) with Amazon S3 configuration management.
 </p>
-
-## Architecture in Equanimo Platform
-
-`eqx-nano-idp` runs as a high-performance, stateless container on the shared ECS Fargate cluster (`apc-shared-services-${env}`) and connects to the shared Application Load Balancer (`eqx-alb`).
-
-- **Configuration Storage**: Amazon S3 bucket (`eqx-nano-idp-config-${env}`) holds `settings.yaml`, `users.yaml`, and signing certificates.
-- **Bi-directional S3 Sync**:
-  - Automatically downloads remote configuration files on startup (`pull_all`).
-  - Automatically uploads updated configurations back to S3 on web UI or API saves (`_save_users`, `_save_settings`).
-  - Hot-reload endpoint: `POST /api/config/sync` to refresh from S3 without container restart.
-- **Routing**: Accessible via `https://idp.${domain_suffix}` or private service discovery `http://nano-idp.shared-services-${env}.internal:8000`.
 
 ## S3 Configuration Environment Variables
 
@@ -23,22 +12,7 @@
 | `NANOIDP_S3_CONFIG_PREFIX` | S3 object prefix/folder | `""` (bucket root) |
 | `NANOIDP_CONFIG_DIR` | Local container configuration directory | `/app/config` |
 | `PORT` | Listening port | `8000` |
-| `OAUTH_ISSUER` | Public OIDC issuer URL | Derived from request or `https://idp.${domain_suffix}` |
-
-## Terraform Deployment
-
-```bash
-cd infra/terraform
-
-# 1. Initialize backend
-terraform init -backend-config=backend-configs/dev.hcl
-
-# 2. Plan deployment
-terraform plan -var-file=envs/dev/dev.tfvars
-
-# 3. Apply infrastructure (S3 bucket, ECR repo, ECS service, ALB routing)
-terraform apply -var-file=envs/dev/dev.tfvars
-```
+| `OAUTH_ISSUER` | Public OIDC issuer URL | `http://localhost:8000` (or derived from the request when `issuer_from_request: true`) |
 
 ## Features
 
