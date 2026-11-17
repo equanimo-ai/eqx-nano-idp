@@ -1,78 +1,50 @@
-# eqx-nano-idp decommission. The module is removed, so its resources are destroyed on the
-# next apply EXCEPT the ones below, which are left in AWS and dropped from Terraform state:
-#   - config bucket + seed objects (seeded user data; kept until a data decision is made)
-#   - ECR repository (images kept)
-#   - Route53 record idp.<env> (DNS unchanged)
-# Requires Terraform >= 1.7 (removed blocks), see versions.tf.
+data "aws_ssm_parameter" "hosted_zone_id" {
+  name = "/apc/${var.environment}/deploy/dns/hosted_zone_id"
+}
 
-removed {
-  from = module.nano_idp.aws_s3_bucket.config
-  lifecycle {
-    destroy = false
+data "aws_ssm_parameter" "alb_dns_name" {
+  name = "/apc/${var.environment}/deploy/alb/dns_name"
+}
+
+import {
+  to = aws_s3_bucket.config
+  id = "eqx-nano-idp-config-dev"
+}
+
+import {
+  to = aws_ecr_repository.kept
+  id = "eqx-nano-idp"
+}
+
+import {
+  to = aws_route53_record.idp
+  id = "${data.aws_ssm_parameter.hosted_zone_id.value}_idp.dev.equanimo.io_CNAME"
+}
+
+resource "aws_s3_bucket" "config" {
+  bucket        = "eqx-nano-idp-config-dev"
+  force_destroy = true
+}
+
+resource "aws_ecr_repository" "kept" {
+  name                 = "eqx-nano-idp"
+  image_tag_mutability = "MUTABLE"
+  force_delete         = true
+  image_scanning_configuration {
+    scan_on_push = true
   }
 }
 
-removed {
-  from = module.nano_idp.aws_s3_bucket_versioning.config
-  lifecycle {
-    destroy = false
-  }
+resource "aws_route53_record" "idp" {
+  zone_id = data.aws_ssm_parameter.hosted_zone_id.value
+  name    = "idp.dev.equanimo.io"
+  type    = "CNAME"
+  ttl     = 300
+  records = [data.aws_ssm_parameter.alb_dns_name.value]
 }
 
-removed {
-  from = module.nano_idp.aws_s3_bucket_public_access_block.config
-  lifecycle {
-    destroy = false
-  }
-}
-
-removed {
-  from = module.nano_idp.aws_s3_bucket_server_side_encryption_configuration.config
-  lifecycle {
-    destroy = false
-  }
-}
-
-removed {
-  from = module.nano_idp.aws_s3_bucket_policy.config
-  lifecycle {
-    destroy = false
-  }
-}
-
-removed {
-  from = module.nano_idp.aws_s3_object.seed_settings
-  lifecycle {
-    destroy = false
-  }
-}
-
-removed {
-  from = module.nano_idp.aws_s3_object.seed_users
-  lifecycle {
-    destroy = false
-  }
-}
-
-removed {
-  from = module.nano_idp.aws_ecr_repository.this
-  lifecycle {
-    destroy = false
-  }
-}
-
-removed {
-  from = module.nano_idp.aws_route53_record.this
-  lifecycle {
-    destroy = false
-  }
-}
-
-# Retention for the kept ECR repository (eqx-nano-idp, left in AWS by the removed block
-# above). Restores the module's policy, which the decommission apply destroyed: keep the
-# last 30 images, expire the rest. Referenced by name, so the repo itself is not managed here.
 resource "aws_ecr_lifecycle_policy" "nano_idp" {
-  repository = "eqx-nano-idp"
+  repository = aws_ecr_repository.kept.name
   policy = jsonencode({
     rules = [{
       rulePriority = 1
