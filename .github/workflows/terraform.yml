@@ -1,10 +1,7 @@
 name: Terraform (Dev)
 
 on:
-  # Infra changes must reach AWS on merge. Without this the workflow was
-  # dispatch-only, so merged Terraform sat unapplied and the repo drifted from
-  # the account -- a green "CI/CD & Deploy (Dev)" run only means the image was
-  # pushed, it never planned or applied.
+  # Merged infra changes apply to dev on push to internal-main.
   push:
     branches: [internal-main]
     paths:
@@ -38,9 +35,7 @@ jobs:
       - name: Configure AWS Credentials (OIDC)
         uses: aws-actions/configure-aws-credentials@v4
         with:
-          # AWS_SERVICE_DEPLOY_ROLE_PREFIX names a per-repo role that does not
-          # exist in the dev account; only the two shared roles do. This job
-          # runs terraform, so it takes the infra role.
+          # Terraform runs with the shared infra role.
           role-to-assume: arn:aws:iam::${{ vars.AWS_ACCOUNT_ID_DEV }}:role/${{ vars.AWS_INFRA_ROLE_NAME_DEV }}
           aws-region: ${{ env.AWS_REGION }}
 
