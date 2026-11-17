@@ -1,17 +1,69 @@
-module "nano_idp" {
-  source = "./modules/nano-idp"
+# eqx-nano-idp decommission. The module is removed, so its resources are destroyed on the
+# next apply EXCEPT the ones below, which are left in AWS and dropped from Terraform state:
+#   - config bucket + seed objects (seeded user data; kept until a data decision is made)
+#   - ECR repository (images kept)
+#   - Route53 record idp.<env> (DNS unchanged)
+# Requires Terraform >= 1.7 (removed blocks), see versions.tf.
 
-  environment                = var.environment
-  name_prefix                = local.name_prefix
-  image_tag                  = var.image_tag
-  cpu                        = var.cpu
-  memory                     = var.memory
-  desired_count              = var.desired_count
-  capacity_provider_strategy = var.capacity_provider_strategy
-  domain_prefix              = var.domain_prefix
-  enable_off_hours_schedule  = var.enable_off_hours_schedule
-  schedule_start_cron        = var.schedule_start_cron
-  schedule_stop_cron         = var.schedule_stop_cron
-  schedule_timezone          = var.schedule_timezone
-  common_tags                = local.common_tags
+removed {
+  from = module.nano_idp.aws_s3_bucket.config
+  lifecycle {
+    destroy = false
+  }
+}
+
+removed {
+  from = module.nano_idp.aws_s3_bucket_versioning.config
+  lifecycle {
+    destroy = false
+  }
+}
+
+removed {
+  from = module.nano_idp.aws_s3_bucket_public_access_block.config
+  lifecycle {
+    destroy = false
+  }
+}
+
+removed {
+  from = module.nano_idp.aws_s3_bucket_server_side_encryption_configuration.config
+  lifecycle {
+    destroy = false
+  }
+}
+
+removed {
+  from = module.nano_idp.aws_s3_bucket_policy.config
+  lifecycle {
+    destroy = false
+  }
+}
+
+removed {
+  from = module.nano_idp.aws_s3_object.seed_settings
+  lifecycle {
+    destroy = false
+  }
+}
+
+removed {
+  from = module.nano_idp.aws_s3_object.seed_users
+  lifecycle {
+    destroy = false
+  }
+}
+
+removed {
+  from = module.nano_idp.aws_ecr_repository.this
+  lifecycle {
+    destroy = false
+  }
+}
+
+removed {
+  from = module.nano_idp.aws_route53_record.this
+  lifecycle {
+    destroy = false
+  }
 }
